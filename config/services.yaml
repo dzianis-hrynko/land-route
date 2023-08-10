@@ -1,0 +1,47 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+    country_provider_url: '%env(string:COUNTRY_PROVIDER_URL)%'
+    sync_countries: '%env(bool:SYNC_COUNTRIES)%'
+    neo4j_host: '%env(string:NEO4J_HOST)%'
+    neo4j_user: '%env(string:NEO4J_USER)%'
+    neo4j_password: '%env(string:NEO4J_PASSWORD)%'
+    neo4j_protocol: '%env(string:NEO4J_PROTOCOL)%'
+    neo4j_driver: '%env(string:NEO4J_DRIVER)%'
+    neo4j_port: '%env(string:NEO4J_PORT)%'
+    neo4j_db: '%env(string:NEO4J_DB)%'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $countryProviderUrl: '%country_provider_url%'
+            $syncCountries: '%sync_countries%'
+
+    Laudis\Neo4j\Client:
+        factory: [ '@App\Factory\Neo4jClientFactory', 'create' ]
+        arguments:
+            $driver: '%neo4j_driver%'
+            $protocol: '%neo4j_protocol%'
+            $port: '%neo4j_port%'
+            $host: '%neo4j_host%'
+            $user: '%neo4j_user%'
+            $password: '%neo4j_password%'
+            $database: '%neo4j_db%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones

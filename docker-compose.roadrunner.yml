@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+  land-route-roadrunner:
+    container_name: land-route-roadrunner
+    build:
+      context: .
+      dockerfile: Dockerfile.roadrunner
+    env_file:
+      - ./.env
+    working_dir: /application
+    image: land-route:roadrunner
+    command: bin/rr serve -c .rr.yaml
+    volumes:
+      - ./src:/application/src
+    networks:
+      - land-route-network
+    ports:
+      - "8015:8015"
+
+  land-route-neo4j:
+    container_name: land-route-neo4j
+    image: bitnami/neo4j:latest
+    environment:
+      - NEO4J_HOST=localhost
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./data:/data
+      - ./logs:/logs
+    networks:
+      - land-route-network
+volumes:
+  dgraph:
+
+networks:
+  land-route-network:
+    driver: bridge

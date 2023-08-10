@@ -1,0 +1,14 @@
+default:
+  formatters:
+    progress: true
+  suites:
+    api_version:
+      paths: [features/suites/route/]
+      contexts:
+        - RouteContext
+  extensions:
+    Imbo\BehatApiExtension:
+      apiClient:
+        base_uri: http://localhost:8015
+        timeout: 5.0
+        verify: false

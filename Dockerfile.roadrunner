@@ -1,0 +1,62 @@
+FROM php:8.2.4-cli-buster as backend
+
+ARG ENV=PROD
+
+ENV USER_ID=1000
+ENV GROUP_ID=1000
+ENV USER_NAME=app
+ENV GROUP_NAME=app
+
+RUN apt-get update && apt-get upgrade -y
+
+RUN apt-get install -y \
+  libpq-dev \
+  libxml2-dev \
+  zip \
+  unzip \
+  libzip-dev \
+  nano
+
+RUN pecl install apcu
+
+RUN docker-php-ext-install \
+  opcache \
+  dom \
+  exif \
+  intl \
+  pcntl \
+  bcmath \
+  zip \
+  pdo_pgsql \
+  sockets \
+  && docker-php-ext-enable \
+  apcu
+
+RUN mkdir /application/ \
+  && addgroup --gid ${GROUP_ID} ${GROUP_NAME} \
+  && adduser --uid ${USER_ID} --ingroup ${GROUP_NAME} --disabled-password --gecos "" ${USER_NAME} \
+  && chown -R ${USER_NAME}:${GROUP_NAME} /application/ \
+  && echo "app ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+WORKDIR /application
+
+COPY --chown=app:app bin /application/bin
+COPY --chown=app:app src /application/src
+COPY --chown=app:app public /application/public
+COPY --chown=app:app config /application/config
+COPY --chown=app:app .env /application/.env
+
+COPY --from=composer:2.5.5 /usr/bin/composer /usr/bin/composer
+COPY --chown=app:app composer.json /application/
+COPY --chown=app:app composer.lock /application/
+
+COPY --chown=app:app .rr.yaml /application/
+
+RUN composer install --prefer-dist --no-dev --no-plugins --no-scripts
+RUN composer dump-autoload --no-dev --classmap-authoritative
+
+COPY --from=ghcr.io/roadrunner-server/roadrunner:2023.2 /usr/bin/rr /application/bin
+
+USER ${USER_NAME}
+
+CMD bin/rr serve -c .rr.yaml
